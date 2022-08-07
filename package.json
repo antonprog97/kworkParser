@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/antonprog97/kworkParser#readme",
   "dependencies": {
+    "node-storage": "0.0.9",
     "puppeteer": "^16.1.0",
     "puppeteer-extra": "^3.3.4",
     "puppeteer-extra-plugin-stealth": "^2.11.0"

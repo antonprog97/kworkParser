@@ -1,5 +1,7 @@
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const Storage = require('node-storage');
+const store = new Storage('./store.json');
 
 puppeteer.use(StealthPlugin());
 
