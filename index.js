@@ -4,7 +4,7 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 
 (async () => {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
     await page.goto('https://kwork.ru/projects?fc=41');
     await page.waitForTimeout(3000);
@@ -13,13 +13,30 @@ puppeteer.use(StealthPlugin());
     );
     const results = [];
     for (let index = 0; index < pagesAmount; index++) {
-        results.push(...(await processPage(page)));
+        console.log(`${index+1}/${pagesAmount}`);
+        results.push(...await processPage(page, index+1));
     }
+    console.log(results);
 })();
 
-async function processPage(page) {
+async function processPage(page, pageNumber) {
     try {
-        
+        await page.goto(`https://kwork.ru/projects?view=0&page=${pageNumber}&fc=41`);
+        const offers = await page.evaluate(() => {
+            const pageResults = [];
+            for (const iterator of document.querySelector('.wants-content').children[0].children) {
+                try {
+                    const offerLink = iterator.querySelector('a')?.href;
+                    if (!offerLink || !offerLink.includes('projects/')) continue;
+                    pageResults.push(offerLink);
+                } catch (error) {
+                    console.log(error);
+                    continue;
+                }
+            }
+            return pageResults;
+        });
+        return offers;
     } catch (error) {
         console.log(error);
         return [];
