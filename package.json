@@ -15,5 +15,10 @@
   "bugs": {
     "url": "https://github.com/antonprog97/kworkParser/issues"
   },
-  "homepage": "https://github.com/antonprog97/kworkParser#readme"
+  "homepage": "https://github.com/antonprog97/kworkParser#readme",
+  "dependencies": {
+    "puppeteer": "^16.1.0",
+    "puppeteer-extra": "^3.3.4",
+    "puppeteer-extra-plugin-stealth": "^2.11.0"
+  }
 }
