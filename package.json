@@ -17,9 +17,12 @@
   },
   "homepage": "https://github.com/antonprog97/kworkParser#readme",
   "dependencies": {
+    "@vk-io/hear": "^1.0.2",
+    "dotenv": "^16.0.1",
     "node-storage": "0.0.9",
     "puppeteer": "^16.1.0",
     "puppeteer-extra": "^3.3.4",
-    "puppeteer-extra-plugin-stealth": "^2.11.0"
+    "puppeteer-extra-plugin-stealth": "^2.11.0",
+    "vk-io": "^4.6.0"
   }
 }
