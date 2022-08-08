@@ -7,14 +7,25 @@ require('dotenv').config();
 const { HearManager } = require('@vk-io/hear')
 const vk = new VK({
     token: process.env.TOKEN
-})
+});
+const fsExtra = require('fs-extra');
 const bot = new HearManager();
 vk.updates.on('message_new', bot.middleware);
 
 puppeteer.use(StealthPlugin());
 
 async function checkOffers() {
-    const browser = await puppeteer.launch({ headless: true });
+    fsExtra.emptyDirSync('./screens');
+    await new Promise(r => setTimeout(r, 3000));
+
+    const browser = await puppeteer.launch({ 
+        headless: true,             
+        args: [
+            '--disable-site-isolation-trials', 
+            '--no-sandbox', 
+            '--disable-setuid-sandbox'
+        ]
+    });
     try {
         const page = await browser.newPage();
         await page.goto('https://kwork.ru/projects?fc=41');
@@ -32,12 +43,21 @@ async function checkOffers() {
             if (!db.includes(link)) { 
                 db.push(link);
                 console.log(`new offer: ${link}`);
-                vk.api.messages.send({
-                    random_id: +new Date(),
-                    peer_id: 2000000001,
-                    message: `${link}`,
-                    v: '5.131'
-                });
+                vk.upload
+                .messagePhoto({
+                    source: {
+                        value: `./screens/${link.split('projects/')[1]}.jpg`
+                    }
+                })
+                .then((attachment) =>
+                    vk.api.messages.send({
+                        attachment,
+                        random_id: +new Date(),
+                        peer_id: 2000000001,
+                        message: `${link}`,
+                        v: '5.131'
+                    })
+                );
             }
         }
         store.put('db', db);
@@ -63,6 +83,18 @@ async function processPage(page, pageNumber) {
             }
             return pageResults;
         });
+        for (let index = 0; index < offers.length; index++) {
+            const offer = offers[index];
+            const el = await page.$(`[href="${offer}"]`);
+            const block = await (async () => {
+                let result = el;
+                for (let index = 0; index < 5; index++) {
+                    result = (await result.$x('..'))[0];
+                }
+                return result;
+            })();
+            await block.screenshot({ path: `./screens/${offer.split('projects/')[1]}.jpg` });
+        }
         return offers;
     } catch (error) {
         console.log(error);
@@ -73,7 +105,7 @@ async function processPage(page, pageNumber) {
 (async () => {
     while (true) {
         await checkOffers();
-        await new Promise(r => setTimeout(r, 5*60*1000))
+        await new Promise(r => setTimeout(r, 10*60*1000))
     }
 })();
 
