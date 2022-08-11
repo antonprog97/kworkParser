@@ -83,7 +83,7 @@ async function processPage(page, pageNumber) {
             }
             return pageResults;
         });
-        for (let index = 0; index < offers.length; index++) {
+        for (let index = 0; index < offers.length; index++) {   
             const offer = offers[index];
             const el = await page.$(`[href="${offer}"]`);
             const block = await (async () => {
@@ -91,6 +91,8 @@ async function processPage(page, pageNumber) {
                 for (let index = 0; index < 5; index++) {
                     result = (await result.$x('..'))[0];
                 }
+                (await result.$('.link_local')).click();
+                await page.waitForTimeout(500);
                 return result;
             })();
             await block.screenshot({ path: `./screens/${offer.split('projects/')[1]}.jpg` });
