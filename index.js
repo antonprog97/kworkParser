@@ -14,29 +14,31 @@ vk.updates.on('message_new', bot.middleware);
 
 puppeteer.use(StealthPlugin());
 
-async function checkOffers() {
-    fsExtra.emptyDirSync('./screens');
-    await new Promise(r => setTimeout(r, 3000));
+async function checkOffers(browser, categoryID, sendToId) {
+    // fsExtra.emptyDirSync('./screens');
+    // await new Promise(r => setTimeout(r, 3000));
 
-    const browser = await puppeteer.launch({ 
-        headless: true,             
-        args: [
-            '--disable-site-isolation-trials', 
-            '--no-sandbox', 
-            '--disable-setuid-sandbox'
-        ]
-    });
+    // const browser = await puppeteer.launch({ 
+    //     headless: true,             
+    //     args: [
+    //         '--disable-site-isolation-trials', 
+    //         '--no-sandbox', 
+    //         '--disable-setuid-sandbox'
+    //     ]
+    // });
+    
     try {
         const page = await browser.newPage();
-        await page.goto('https://kwork.ru/projects?fc=41');
+        await page.goto(`https://kwork.ru/projects?fc=${categoryID}`);
         await page.waitForTimeout(5000);
         const pagesAmount = await page.evaluate(() => 
             parseInt([...[...document.querySelectorAll('ul')].at(-1).querySelectorAll('li')].at(-2).innerText, 10)
         );
         const results = [];
+        console.log(`CategoryID: ${categoryID} SendToID: ${sendToId}`);
         for (let index = 0; index < pagesAmount; index++) {
             console.log(`${index+1}/${pagesAmount}`);
-            results.push(...await processPage(page, index+1));
+            results.push(...await processPage(page, index+1, categoryID));
         }
         const db = store.get('db');
         for (const link of results) {
@@ -44,36 +46,36 @@ async function checkOffers() {
                 db.push(link);
                 console.log(`new offer: ${link}`);
                 // тут скринить
-                await page.goto(link);
-                const block = await page.$('.card');
-                await block.screenshot({ path: `./screens/${link.split('projects/')[1]}.jpg` });
+                // await page.goto(link);
+                // const block = await page.$('.card');
+                // await block.screenshot({ path: `./screens/${link.split('projects/')[1]}.jpg` });
 
-                vk.upload
-                .messagePhoto({
-                    source: {
-                        value: `./screens/${link.split('projects/')[1]}.jpg`
-                    }
-                })
-                .then((attachment) =>
-                    vk.api.messages.send({
-                        attachment,
-                        random_id: +new Date(),
-                        peer_id: 2000000001,
-                        message: `${link}`,
-                        v: '5.131'
-                    })
-                );
+                // vk.upload
+                // .messagePhoto({
+                //     source: {
+                //         value: `./screens/${link.split('projects/')[1]}.jpg`
+                //     }
+                // })
+                // .then((attachment) =>
+                //     vk.api.messages.send({
+                //         attachment,
+                //         random_id: +new Date(),
+                //         peer_id: sendToId,
+                //         message: `${link}`,
+                //         v: '5.131'
+                //     })
+                // );
             }
         }
         store.put('db', db);
     } catch (error) {
         console.log(error);
     }
-    await browser.close();
+    // await browser.close();
 }
-async function processPage(page, pageNumber) {
+async function processPage(page, pageNumber, categoryID) {
     try {
-        await page.goto(`https://kwork.ru/projects?view=0&page=${pageNumber}&fc=41`);
+        await page.goto(`https://kwork.ru/projects?view=0&page=${pageNumber}&fc=${categoryID}`);
         const offers = await page.evaluate(() => {
             const pageResults = [];
             for (const iterator of document.querySelector('.wants-content').children[0].children) {
@@ -111,8 +113,24 @@ async function processPage(page, pageNumber) {
 
 (async () => {
     while (true) {
-        await checkOffers();
-        await new Promise(r => setTimeout(r, 10*60*1000))
+        fsExtra.emptyDirSync('./screens');
+        await new Promise(r => setTimeout(r, 3000));
+
+        const browser = await puppeteer.launch({ 
+            headless: true,             
+            args: [
+                '--disable-site-isolation-trials', 
+                '--no-sandbox', 
+                '--disable-setuid-sandbox'
+            ]
+        });
+        // await checkOffers(browser, 41, 2000000001);
+        // await checkOffers(browser, 80, 2000000001);
+        // await checkOffers(browser, 79, 344262629);
+        await checkOffers(browser, 37, 344262629);
+        await checkOffers(browser, 38, 344262629);
+        await browser.close();
+        await new Promise(r => setTimeout(r, 10*60*1000));
     }
 })();
 
