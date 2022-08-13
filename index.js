@@ -3,6 +3,8 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const Storage = require('node-storage');
 const store = new Storage('./store.json');
 const { VK } = require('vk-io');
+const express = require('express');
+const app = express();
 require('dotenv').config();
 const { HearManager } = require('@vk-io/hear')
 const vk = new VK({
@@ -13,7 +15,7 @@ const bot = new HearManager();
 vk.updates.on('message_new', bot.middleware);
 
 puppeteer.use(StealthPlugin());
-
+app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
 async function checkOffers(browser, categoryID, sendToId) {
     // fsExtra.emptyDirSync('./screens');
     // await new Promise(r => setTimeout(r, 3000));
@@ -45,31 +47,31 @@ async function checkOffers(browser, categoryID, sendToId) {
             if (!db.includes(link)) { 
                 db.push(link);
                 console.log(`new offer: ${link}`);
-                // тут скринить
-                // await page.goto(link);
-                // const block = await page.$('.card');
-                // await block.screenshot({ path: `./screens/${link.split('projects/')[1]}.jpg` });
+                await page.goto(link);
+                const block = await page.$('.card');
+                await block.screenshot({ path: `./screens/${link.split('projects/')[1]}.jpg` });
 
-                // vk.upload
-                // .messagePhoto({
-                //     source: {
-                //         value: `./screens/${link.split('projects/')[1]}.jpg`
-                //     }
-                // })
-                // .then((attachment) =>
-                //     vk.api.messages.send({
-                //         attachment,
-                //         random_id: +new Date(),
-                //         peer_id: sendToId,
-                //         message: `${link}`,
-                //         v: '5.131'
-                //     })
-                // );
+                vk.upload
+                .messagePhoto({
+                    source: {
+                        value: `./screens/${link.split('projects/')[1]}.jpg`
+                    }
+                })
+                .then((attachment) =>
+                    vk.api.messages.send({
+                        attachment,
+                        random_id: +new Date(),
+                        peer_id: sendToId,
+                        message: `jjlr.ru?link=${link}`,
+                        v: '5.131'
+                    })
+                );
             }
         }
         store.put('db', db);
     } catch (error) {
-        console.log(error);
+        console.log('1', error);
+        await page.screenshot({ fullPage: true, path: './1.jpg' });
     }
     // await browser.close();
 }
@@ -106,7 +108,8 @@ async function processPage(page, pageNumber, categoryID) {
         // }
         return offers;
     } catch (error) {
-        console.log(error);
+        console.log('2', error);
+        await page.screenshot({ fullPage: true, path: './2.jpg' });
         return [];
     }
 }
@@ -117,21 +120,22 @@ async function processPage(page, pageNumber, categoryID) {
         await new Promise(r => setTimeout(r, 3000));
 
         const browser = await puppeteer.launch({ 
-            headless: true,             
+            headless: true,          
             args: [
                 '--disable-site-isolation-trials', 
                 '--no-sandbox', 
-                '--disable-setuid-sandbox'
+                '--disable-setuid-sandbox'  
             ]
         });
-        // await checkOffers(browser, 41, 2000000001);
-        // await checkOffers(browser, 80, 2000000001);
-        // await checkOffers(browser, 79, 344262629);
-        await checkOffers(browser, 37, 344262629);
-        await checkOffers(browser, 38, 344262629);
+        await checkOffers(browser, 41, 2000000001);
+        await checkOffers(browser, 80, 2000000001);
+        await checkOffers(browser, 79, 433238820);
+        await checkOffers(browser, 37, 433238820);
+        await checkOffers(browser, 38, 433238820);
         await browser.close();
         await new Promise(r => setTimeout(r, 10*60*1000));
     }
 })();
 
 vk.updates.start().catch(console.error);
+app.listen(3799);
